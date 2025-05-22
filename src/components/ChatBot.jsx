@@ -9,10 +9,18 @@ const ChatBot = () => {
   const [faqQuestions, setFaqQuestions] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingDots, setTypingDots] = useState('');
-  const [isAtStart, setIsAtStart] = useState(true); // ⬅️ Nuevo estado
+  const [isAtStart, setIsAtStart] = useState(true);
+  const [currentCategory, setCurrentCategory] = useState('');
 
   const messagesEndRef = useRef(null);
   const typingIntervalRef = useRef(null);
+  const normalizeText = (text) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD') // descompone caracteres Unicode
+      .replace(/[\u0300-\u036f]/g, ''); // elimina los acentos
+  };
+  
 
   useEffect(() => {
     fetchInitialGreeting();
@@ -29,7 +37,7 @@ const ChatBot = () => {
         setMessages([{ text: data, sender: 'bot' }]);
         setShowOptions(true);
         setFaqQuestions([]);
-        setIsAtStart(true); // ⬅️ Activamos "modo inicio"
+        setIsAtStart(true); // inicio
       })
       .catch(error => console.error('Error fetching initial message:', error));
   };
@@ -56,30 +64,33 @@ const ChatBot = () => {
     if (!userMessage.trim()) return;
 
     setMessages(prev => [...prev, { text: userMessage, sender: 'user' }]);
-    setIsAtStart(false); // ⬅️ Ya no estamos en el inicio
+    setIsAtStart(false);
     setShowOptions(false);
     setFaqQuestions([]);
     setInput('');
     setIsTyping(true);
     startTypingAnimation();
 
-    if (['1', '2', '3', 'admisión', 'carreras', 'académico'].includes(userMessage.toLowerCase())) {
-      let category = '';
-      if (userMessage === '1' || userMessage.toLowerCase() === 'admisión') category = 'Admisión';
-      else if (userMessage === '2' || userMessage.toLowerCase() === 'carreras') category = 'Carreras';
-      else if (userMessage === '3' || userMessage.toLowerCase() === 'académico') category = 'Académico';
+    const normalizedMessage = normalizeText(userMessage);
 
+      if (['1', '2', '3', 'admision', 'carreras', 'academico'].includes(normalizedMessage)) {
+      let category = '';
+      if (userMessage === '1' || normalizedMessage === 'admision') category = 'Admisión';
+      else if (userMessage === '2' || normalizedMessage === 'carreras') category = 'Carreras';
+      else if (userMessage === '3' || normalizedMessage === 'academico') category = 'Académico';
+
+    
       fetch(`http://localhost:8080/chat/category/${encodeURIComponent(category)}`, { method: 'POST' })
         .then(response => response.text())
         .then(data => {
+          const questions = data.match(/\u00bf[^?]+\?/g) || [];
+          setCurrentCategory(category); // ⬅️ Guardar categoría
           setTimeout(() => {
-            setMessages(prev => [...prev, { text: data, sender: 'bot' }]);
-            const questions = data.match(/\u00bf[^?]+\?/g) || [];
             setFaqQuestions(questions);
             setIsTyping(false);
             stopTypingAnimation();
           }, 1000);
-        })
+        })    
         .catch(error => {
           console.error('Error fetching category:', error);
           setIsTyping(false);
@@ -221,7 +232,14 @@ const ChatBot = () => {
             )}
 
             {faqQuestions.length > 0 && (
-              <div style={{ marginTop: 10, textAlign: 'left' }}>
+            <div style={{ marginTop: 10, textAlign: 'left' }}>
+              {/* Mensaje superior personalizado del bot */}
+              <div style={messageStyle('bot')}>
+                <div style={bubbleStyle('bot')}>
+                  Oh, elegiste {currentCategory.toLowerCase()}, algunas preguntas frecuentes suelen ser:
+                </div>
+              </div>
+
                 {faqQuestions.map((question, idx) => (
                   <button
                     key={idx}
@@ -231,10 +249,15 @@ const ChatBot = () => {
                     {question}
                   </button>
                 ))}
+
+                <div style={messageStyle('bot')}>
+                  <div style={bubbleStyle('bot')}>
+                    Selecciona o formula tu propia duda 👀
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Botón volver al inicio (solo si no estás en la pantalla de bienvenida) */}
             {!isAtStart && (
               <div style={{ marginTop: 10, textAlign: 'left' }}>
                 <button
