@@ -17,8 +17,8 @@ const ChatBot = () => {
   const normalizeText = (text) => {
     return text
       .toLowerCase()
-      .normalize('NFD') // descompone caracteres Unicode
-      .replace(/[\u0300-\u036f]/g, ''); // elimina los acentos
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   };
   
 
@@ -84,7 +84,7 @@ const ChatBot = () => {
         .then(response => response.text())
         .then(data => {
           const questions = data.match(/\u00bf[^?]+\?/g) || [];
-          setCurrentCategory(category); // ⬅️ Guardar categoría
+          setCurrentCategory(category);
           setTimeout(() => {
             setFaqQuestions(questions);
             setIsTyping(false);
@@ -186,7 +186,10 @@ const ChatBot = () => {
 
       {/* Botón para abrir el chat */}
       {!isOpen && (
-        <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f1f5fb', cursor: 'pointer' }} onClick={() => setIsOpen(true)}>
+        <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f1f5fb', cursor: 'pointer' }} onClick={() => {
+          setIsOpen(true);
+          fetchInitialGreeting();
+        }}>
           <div style={{
             display: 'inline-block',
             backgroundColor: '#ffffff',
@@ -233,7 +236,6 @@ const ChatBot = () => {
 
             {faqQuestions.length > 0 && (
             <div style={{ marginTop: 10, textAlign: 'left' }}>
-              {/* Mensaje superior personalizado del bot */}
               <div style={messageStyle('bot')}>
                 <div style={bubbleStyle('bot')}>
                   Oh, elegiste {currentCategory.toLowerCase()}, algunas preguntas frecuentes suelen ser:
@@ -259,12 +261,36 @@ const ChatBot = () => {
             )}
 
             {!isAtStart && (
-              <div style={{ marginTop: 10, textAlign: 'left' }}>
+              <div
+                style={{
+                  marginTop: 15,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0 10px'
+                }}
+              >
                 <button
-                  style={{ ...optionButtonStyle, marginTop: '15px', backgroundColor: '#d7eaff' }}
+                  style={{ ...optionButtonStyle, backgroundColor: '#d7eaff' }}
                   onClick={() => handleSend('inicio')}
                 >
                   🔙 Volver al Inicio
+                </button>
+                <button
+                  style={{ ...optionButtonStyle, backgroundColor: '#d7eaff' }}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setMessages([]);
+                    setInput('');
+                    setFaqQuestions([]);
+                    setShowOptions(false);
+                    setIsAtStart(true);
+                    setCurrentCategory('');
+                    setIsTyping(false);
+                    setTypingDots('');
+                  }}
+                >
+                  ❌ Salir
                 </button>
               </div>
             )}
