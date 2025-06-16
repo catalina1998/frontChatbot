@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import Message from './Message';
+
 
 const ChatBot = () => {
   const [messages, setMessages] = useState([]);
@@ -11,16 +14,17 @@ const ChatBot = () => {
   const [typingDots, setTypingDots] = useState('');
   const [isAtStart, setIsAtStart] = useState(true);
   const [currentCategory, setCurrentCategory] = useState('');
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const messagesEndRef = useRef(null);
   const typingIntervalRef = useRef(null);
+
   const normalizeText = (text) => {
     return text
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
   };
-  
 
   useEffect(() => {
     fetchInitialGreeting();
@@ -37,7 +41,7 @@ const ChatBot = () => {
         setMessages([{ text: data, sender: 'bot' }]);
         setShowOptions(true);
         setFaqQuestions([]);
-        setIsAtStart(true); // inicio
+        setIsAtStart(true);
       })
       .catch(error => console.error('Error fetching initial message:', error));
   };
@@ -73,13 +77,12 @@ const ChatBot = () => {
 
     const normalizedMessage = normalizeText(userMessage);
 
-      if (['1', '2', '3', 'admision', 'carreras', 'academico'].includes(normalizedMessage)) {
+    if (['1', '2', '3', 'admision', 'carreras', 'academico'].includes(normalizedMessage)) {
       let category = '';
       if (userMessage === '1' || normalizedMessage === 'admision') category = 'Admisión';
       else if (userMessage === '2' || normalizedMessage === 'carreras') category = 'Carreras';
       else if (userMessage === '3' || normalizedMessage === 'academico') category = 'Académico';
 
-    
       fetch(`http://localhost:8080/chat/category/${encodeURIComponent(category)}`, { method: 'POST' })
         .then(response => response.text())
         .then(data => {
@@ -90,14 +93,13 @@ const ChatBot = () => {
             setIsTyping(false);
             stopTypingAnimation();
           }, 1000);
-        })    
+        })
         .catch(error => {
           console.error('Error fetching category:', error);
           setIsTyping(false);
           stopTypingAnimation();
         });
     } else if (userMessage.toLowerCase() === 'inicio' || userMessage.toLowerCase() === 'volver') {
-      // Vuelve al saludo inicial
       setTimeout(() => {
         fetchInitialGreeting();
         setIsTyping(false);
@@ -165,7 +167,6 @@ const ChatBot = () => {
       backgroundColor: '#fff',
       zIndex: 999
     }}>
-
       {/* Encabezado */}
       <div style={{
         backgroundColor: '#3f51b5',
@@ -175,12 +176,23 @@ const ChatBot = () => {
         borderTopRightRadius: 10,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px'
+        justifyContent: 'space-between'
       }}>
-        <img src="/logorobot.png" alt="Bot" style={{ width: 40, height: 40 }} />
-        <div>
-          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Facultad Politécnica</div>
-          <div style={{ fontSize: '12px', color: '#bbffbb' }}>🟢 En línea</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src="/logorobot.png" alt="Bot" style={{ width: 40, height: 40 }} />
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Facultad Politécnica</div>
+            <div style={{ fontSize: '12px', color: '#bbffbb' }}>🟢 En línea</div>
+          </div>
+        </div>
+
+        {/* Botón minimizar/maximizar */}
+        <div
+          title={isMinimized ? "Expandir chat" : "Minimizar chat"}
+          style={{ cursor: 'pointer', backgroundColor: 'transparent', border: 'none' }}
+          onClick={() => setIsMinimized(!isMinimized)}
+        >
+          {isMinimized ? <AddIcon style={{ color: 'white' }} /> : <RemoveIcon style={{ color: 'white' }} />}
         </div>
       </div>
 
@@ -206,7 +218,7 @@ const ChatBot = () => {
       )}
 
       {/* Cuerpo del chat */}
-      {isOpen && (
+      {isOpen && !isMinimized && (
         <>
           <div style={{
             height: 400,
@@ -235,12 +247,12 @@ const ChatBot = () => {
             )}
 
             {faqQuestions.length > 0 && (
-            <div style={{ marginTop: 10, textAlign: 'left' }}>
-              <div style={messageStyle('bot')}>
-                <div style={bubbleStyle('bot')}>
-                  Oh, elegiste {currentCategory.toLowerCase()}, algunas preguntas frecuentes suelen ser:
+              <div style={{ marginTop: 10, textAlign: 'left' }}>
+                <div style={messageStyle('bot')}>
+                  <div style={bubbleStyle('bot')}>
+                    Oh, elegiste {currentCategory.toLowerCase()}, algunas preguntas frecuentes suelen ser:
+                  </div>
                 </div>
-              </div>
 
                 {faqQuestions.map((question, idx) => (
                   <button
@@ -261,15 +273,13 @@ const ChatBot = () => {
             )}
 
             {!isAtStart && (
-              <div
-                style={{
-                  marginTop: 15,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0 10px'
-                }}
-              >
+              <div style={{
+                marginTop: 15,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0 10px'
+              }}>
                 <button
                   style={{ ...optionButtonStyle, backgroundColor: '#d7eaff' }}
                   onClick={() => handleSend('inicio')}
