@@ -228,7 +228,27 @@ const ChatBot = () => {
           }}>
             {messages.map((msg, i) => (
               <div key={i} style={messageStyle(msg.sender)}>
-                <div style={bubbleStyle(msg.sender)}>{msg.text}</div>
+                <div style={{
+                  ...bubbleStyle(msg.sender),
+                  whiteSpace: 'pre-line'
+                }}>
+                  {
+                    msg.text.includes('•')
+                      ? msg.text.split('•').map((line, idx) => {
+                          const trimmed = line.trim();
+                          if (!trimmed) return null; // evitar líneas vacías
+                          return (
+                            <div key={idx}>
+                              {trimmed.startsWith('La Facultad') || trimmed.startsWith('*') || trimmed.endsWith(':')
+                                ? trimmed // sin viñeta si es encabezado o nota
+                                : `• ${trimmed}`
+                              }
+                            </div>
+                          );
+                        })
+                      : msg.text
+                  }
+                </div>
               </div>
             ))}
 

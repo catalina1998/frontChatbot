@@ -2,6 +2,7 @@ import React from 'react';
 
 const Message = ({ text, sender }) => {
   const isUser = sender === 'user';
+
   return (
     <div style={{
       textAlign: isUser ? 'right' : 'left',
@@ -13,7 +14,13 @@ const Message = ({ text, sender }) => {
         borderRadius: '10px',
         background: isUser ? '#daf8cb' : '#eee'
       }}>
-        {text}
+        {
+          text.includes('•')
+            ? text.split('•').map((line, index) => (
+                <div key={index}>{line.trim()}</div>
+              ))
+            : <div style={{ whiteSpace: 'pre-line' }}>{text}</div>
+        }
       </div>
     </div>
   );
